@@ -41,7 +41,7 @@ async function main() {
 
 async function updateAbi() {
   const frontEndAbiFileDestination = "../buy-me-coffee-frontend/constants/BuyMeACoffee.json"
-  const artifactLocation = "../BuyMeACoffee-backend/artifacts/contracts/BuyMeACoffee.sol/BuyMeACoffee.json";
+  const artifactLocation = "../buy-me-coffee-backend/artifacts/contracts/BuyMeACoffee.sol/BuyMeACoffee.json";
   const ContractAbiArtifact = JSON.parse(fs.readFileSync(artifactLocation, "utf8"))
   fs.writeFileSync(frontEndAbiFileDestination, JSON.stringify(ContractAbiArtifact, null, 2));
 }
