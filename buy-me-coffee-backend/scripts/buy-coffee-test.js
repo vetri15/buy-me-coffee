@@ -30,6 +30,10 @@ async function printMemos(memos) {
 }
 
 async function main() {
+
+   if (hre.network.name != "localhost") {
+      throw new Error("This script should only be run on localhost");
+   }
   // Get the example accounts we'll be working with.
   const [owner, tipper, tipper2, tipper3] = await hre.ethers.getSigners();
 
@@ -49,9 +53,9 @@ async function main() {
   // Buy the owner a few coffees.
   const coffeeTip = {value: hre.ethers.parseEther("1")};
   const largeCoffeeTip = {value: hre.ethers.parseEther("3")}
-  await buyMeACoffee.connect(tipper).buyCoffee("Carolina", "You're the best!", coffeeTip);
-  await buyMeACoffee.connect(tipper2).buyCoffee("Vitto", "Amazing teacher", coffeeTip);
-  await buyMeACoffee.connect(tipper3).buyCoffee("Kay", "I love my Proof of Knowledge", largeCoffeeTip);
+  await buyMeACoffee.connect(tipper).buyCoffee("adam", "You're the best!", coffeeTip);
+  await buyMeACoffee.connect(tipper2).buyCoffee("bob", "Amazing teacher", coffeeTip);
+  await buyMeACoffee.connect(tipper3).buyCoffee("cate", "I love my Proof of Knowledge", largeCoffeeTip);
 
   // Check balances after the coffee purchase.
   console.log("== bought coffee ==");
