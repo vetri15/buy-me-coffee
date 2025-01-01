@@ -83,7 +83,7 @@ jobs:
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
       - name: Build with Next.js
         working-directory: ./buy-me-coffee-frontend
-        run: ${{ steps.detect-package-manager.outputs.runner }} next build
+        run: DEPLOYMENT_TARGET="github" ${{ steps.detect-package-manager.outputs.runner }} next build
       - name: Debug Build Directory
         run: |
           echo "Build directory contents:"

@@ -7,6 +7,7 @@ import Head from "next/head";
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 import styles from "@/styles/Home.module.css";
+import basePath from '@/deployment.config';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -220,7 +221,7 @@ export default function Home() {
           <div className={styles.imageWrapper}>
           <Image
             className={styles.logo}
-            src="/coffee-removebg-preview.png"
+            src={basePath+"coffee-removebg-preview.png"}
             alt="coffee image"
             width={180}
             height={180}
