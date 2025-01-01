@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 const fs = require("fs");
 require("@dotenvx/dotenvx").config();
-const { frontEndContractsFile, frontEndAbiFileDestination } = require("../frontend-update.config");
+const { frontEndContractAddressesFile, frontEndAbiFileDestination } = require("../frontend-update.config");
 
 //this will deploy to the localhost
 //npx hardhat run scripts/buy-coffee-deploy.js --network localhost
@@ -45,15 +45,15 @@ async function main() {
 }
 
 async function updateAbi() {
-  const frontEndAbiFileDestination = frontEndAbiFileDestination;
+  const _frontEndAbiFileDestination = frontEndAbiFileDestination;
   const artifactLocation = "../buy-me-coffee-backend/artifacts/contracts/BuyMeACoffee.sol/BuyMeACoffee.json";
   const ContractAbiArtifact = JSON.parse(fs.readFileSync(artifactLocation, "utf8"))
-  fs.writeFileSync(frontEndAbiFileDestination, JSON.stringify(ContractAbiArtifact, null, 2));
+  fs.writeFileSync(_frontEndAbiFileDestination, JSON.stringify(ContractAbiArtifact, null, 2));
 }
 
 async function updateContractAddresses(contractAddress) {
-  const frontEndContractAddressesFile = frontEndContractsFile;
-  const contractAddresses = JSON.parse(fs.readFileSync(frontEndContractAddressesFile, "utf8"))
+  const _frontEndContractAddressesFile = frontEndContractAddressesFile;
+  const contractAddresses = JSON.parse(fs.readFileSync(_frontEndContractAddressesFile, "utf8"))
   if (hre.network.name in contractAddresses) {
       if (!contractAddresses[hre.network.name].includes(contractAddress)) {
           contractAddresses[hre.network.name]=contractAddress;
@@ -61,7 +61,7 @@ async function updateContractAddresses(contractAddress) {
   } else {
       contractAddresses[hre.network.name] = [contractAddress];
   }
-  fs.writeFileSync(frontEndContractAddressesFile, JSON.stringify(contractAddresses))
+  fs.writeFileSync(_frontEndContractAddressesFile, JSON.stringify(contractAddresses))
 }
 
 
