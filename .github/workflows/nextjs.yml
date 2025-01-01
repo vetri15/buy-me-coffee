@@ -84,6 +84,10 @@ jobs:
       - name: Build with Next.js
         working-directory: ./buy-me-coffee-frontend
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
+      - name: Debug Build Directory
+        run: |
+          echo "Build directory contents:"
+          ls -R
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
