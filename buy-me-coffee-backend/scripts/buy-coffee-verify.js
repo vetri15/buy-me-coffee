@@ -1,6 +1,6 @@
 const { run } = require("hardhat");
 const hre = require("hardhat");
-const { frontEndContractsFile } = require("../frontend-update.config");
+const { frontEndContractAddressesFile } = require("../frontend-update.config");
 const fs = require("fs");
 
 const CONSTRUCTOR_ARGUMENTS = [];
@@ -8,8 +8,8 @@ const CONSTRUCTOR_ARGUMENTS = [];
 async function main() {
     if(hre.network.name === "sepolia"){
     console.log("Verifying contract...");
-    const contractAddresses = JSON.parse(fs.readFileSync(frontEndContractsFile, "utf8"));
-    const contractAddress = contractAddresses[hre.network.name];
+    const contractAddresses = JSON.parse(fs.readFileSync(frontEndContractAddressesFile, "utf8"));
+    const contractAddress = contractAddresses[hre.network.config.chainId.toString()];
     let args = CONSTRUCTOR_ARGUMENTS;
     try {
         await run("verify:verify", {
