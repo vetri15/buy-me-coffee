@@ -1,13 +1,15 @@
-import abi from '../constants/BuyMeACoffee.json';
-import contractAddresses from '../constants/contractAddress.json';
+import abi from "../constants/BuyMeACoffee.json";
+import contractAddresses from "../constants/contractAddress.json";
+
+import classNames from "classnames";
 import { ethers } from "ethers";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState , useRef} from "react";
 
 import Head from "next/head";
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 import styles from "@/styles/Home.module.css";
-import basePath from '@/deployment.config';
+import basePath from "@/deployment.config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,87 +22,106 @@ const geistMono = Geist_Mono({
 });
 
 export default function Home() {
-  
-  let contractAddress = "0x";
   const contractABI = abi.abi;
   let test = 2;
-  const [currentAccount, setCurrentAccount] = useState("");
+
+  const [networkId, setNetworkId] = useState(0);
+  const [isTransactionReady, setIsTransactionReady] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("Not Connected");
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [memos, setMemos] = useState([]);
 
-  useEffect(() => {
-    window.setMemos = setMemos;
-  }, [memos]);
+  let [currentAccount, setCurrentAccount] = useState("0x");
+  let [contractAddress, setContractAddress] = useState("0x");
+
+  let isMetamaskInstalled = useRef(false);
+  let isWalletConnected = useRef(false);
+
+  let ethereumObject = useRef();
+  let provider = useRef();
+  let network = useRef();
 
   const onNameChange = (event) => {
     setName(event.target.value);
-  }
+  };
 
   const onMessageChange = (event) => {
     setMessage(event.target.value);
-  }
+  };
 
-  const isWalletConnected = async () => {
-    try {
-      const { ethereum } = window;
+  const trimAddress = (address) => {
+    return address.slice(0, 6) + "...." + address.slice(-4);
+  };
 
-      const accounts = await ethereum.request({method: 'eth_accounts'})
-      console.log("available accounts: ", accounts);
-
-      if (accounts.length > 0) {
-        const account = accounts[0];
-        console.log("wallet is connected! " + account);
-      } else {
-        console.log("make sure metamask is connected");
-      }
-    } catch (error) {
-      console.log("error: ", error);
+  const initializeMetamask = () => {
+    const { ethereum } = window;
+    if (!ethereum) {
+      return;
     }
-  }
+    ethereumObject.current = window.ethereum;
+    provider.current = new ethers.BrowserProvider(ethereumObject.current);
+    isMetamaskInstalled.current = true;
+    return;
+  };
+
+  const isNetworkSupported = (networkId) => {
+    if (contractAddresses[networkId]) {
+      return true;
+    } else {
+      return false;
+    }
+  };
 
   const connectWallet = async () => {
     try {
-      const {ethereum} = window;
+      if (isMetamaskInstalled.current) {
 
-      if (!ethereum) {
-        console.log("please install MetaMask");
+        network.current = await provider.current.getNetwork();
+        isWalletConnected.current = (network.current != null ? true : false) && (true);
+
+        const accounts = await ethereumObject.current.request({
+          method: "eth_requestAccounts",
+        });
+        isWalletConnected.current = (accounts.length > 0 ? true : false) && isWalletConnected.current;
+
+        isWalletConnected.current = (isNetworkSupported(network.current.chainId) ? true : false) && isWalletConnected.current;
+
+        if (isWalletConnected.current) {
+          setNetworkId(network.current.chainId);
+          console.log("setting contract address to : "+contractAddresses[BigInt(network.current.chainId).toString()]);
+          contractAddress = contractAddresses[BigInt(network.current.chainId).toString()];
+          await setContractAddress(
+            contractAddresses[BigInt(network.current.chainId).toString()]
+          );
+          setCurrentAccount(accounts[0]);
+        }
+      }else{
+        isWalletConnected.current = false;
       }
-
-      const accounts = await ethereum.request({
-        method: 'eth_requestAccounts'
-      });
-
-      setCurrentAccount(accounts[0]);
     } catch (error) {
       console.log(error);
     }
-  }
+  };
 
   const buyCoffee = async (amount) => {
     try {
-      const {ethereum} = window;
-
-      if (ethereum) {
-        const provider = new ethers.BrowserProvider(ethereum);
-        const signer = await provider.getSigner();
-        console.log(signer.address);
-        const buyMeACoffee = new ethers.Contract(
+      if (isTransactionReady) {
+        const signer = await provider.current.getSigner();
+        let buyMeACoffee = new ethers.Contract(
           contractAddress,
           contractABI,
           signer
         );
-
-        console.log("buying coffee..")
+        console.log("buying coffee..");
         const coffeeTxn = await buyMeACoffee.buyCoffee(
-          name ? name : "anon",
-          message ? message : "Enjoy your coffee!",
-          {value: ethers.parseEther(amount)}
+          name ? name : "alex",
+          message ? message : "Enjoy the coffee!",
+          { value: ethers.parseEther(amount) }
         );
-        // const coffeeTxn = await buyMeACoffee.getMemos();
-        console.log(coffeeTxn);
 
-        let receipt = await provider.waitForTransaction(coffeeTxn.hash);
+        console.log(coffeeTxn);
+        let receipt = await provider.current.waitForTransaction(coffeeTxn.hash);
 
         console.log("mined ", coffeeTxn);
         console.log(receipt);
@@ -118,19 +139,15 @@ export default function Home() {
 
   const getMemos = async () => {
     try {
-      const { ethereum } = window;
-      if (ethereum) {
-        const provider = new ethers.BrowserProvider(ethereum);
-        const signer = await provider.getSigner();
-        const network = await provider.getNetwork();
-        console.log("current network: ", BigInt(network.chainId).toString());
-        contractAddress = contractAddresses[BigInt(network.chainId).toString()];
+      if (ethereumObject.current) {
+        const signer = await provider.current.getSigner();
+        console.log("current network: ", BigInt(network.current.chainId).toString());
         const buyMeACoffee = new ethers.Contract(
           contractAddress,
           contractABI,
           signer
         );
-        
+
         console.log("fetching memos from the blockchain..");
         const memos = await buyMeACoffee.getMemos();
         console.log("fetched!");
@@ -138,75 +155,98 @@ export default function Home() {
       } else {
         console.log("Metamask is not connected");
       }
-      
     } catch (error) {
       console.log(error);
     }
   };
 
+  const getNetworkName = (chainId) => {
+    const networks = {
+      1: "Ethereum Mainnet",
+      31337: "Localhost",
+      11155111: "Sepolia Testnet",
+    };
+    return networks[chainId] || "Unsupported Network";
+  };
 
-  
+  const setupNewMemoListener = async () => {
+    console.log("setting up event listener..");
+    const signer = await provider.current.getSigner();
+    const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
+    // Listen for the NewMemo event
+    const filter = await contract.filters.NewMemo();
+    contract.on(filter, (log) => {
+      console.log("log received ", log);
+      const parsedLog = contract.interface.parseLog(log.log, filter);
+      console.log("parsed log: ", parsedLog);
+      const { from, timestamp, name, message } = parsedLog.args;
+      console.log("Memo received:", from, timestamp, name, message);
 
+      setMemos((prevState) => [
+        ...prevState,
+        {
+          address: from,
+          timestamp: new Date(Number(timestamp) * 1000),
+          message,
+          name,
+        },
+      ]);
+    });
+  };
 
-  useEffect(() => {
-    
-    // Create an event handler function for when someone sends us a new memo.
-    const setupEventListener = async () => {
-      console.log("setting up event listener..");
-      const {ethereum} = window;
-      if (!ethereum) {
-        console.error("Ethereum object not found, install MetaMask.");
-        return;
-      }
-      const provider = new ethers.BrowserProvider(ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(contractAddress, contractABI, signer);
-
-      // Listen for the NewMemo event
-      const filter = await contract.filters.NewMemo();
-      const buyMeACoffee = new ethers.Contract(
-        contractAddress,
-        contractABI,
-        signer
-      );
-      buyMeACoffee.on(filter, (log) => {
-        
-        console.log("log received ", log);
-        const parsedLog = buyMeACoffee.interface.parseLog(log.log , filter);
-        console.log("parsed log: ", parsedLog);
-        const { from, timestamp, name, message } = parsedLog.args;
-        console.log("Memo received:", from, timestamp, name, message);
-
-        setMemos((prevState) => [
-          ...prevState,
-          {
-            address: from,
-            timestamp: new Date(Number(timestamp) * 1000),
-            message,
-            name,
-          },
-        ]);
-
-      })
-
+  const handleNetworkChage = (chainId) => {
+    console.log("chain changed to ", chainId);
+    if (isNetworkSupported(chainId)) {
+      getMemos();
+      setIsTransactionReady(true);
+      setErrorMessage(null);
+    } else {
+      setIsTransactionReady(false);
+      setErrorMessage("Network not supported");
     }
-    
-    isWalletConnected();
-    getMemos();
-    setupEventListener();
-      
+    setNetworkId(chainId);
+  };
 
+  const handleAccountChange = (accounts) => {
+    console.log("account changed to ", accounts[0]);
+    setCurrentAccount(accounts[0]);
+  };
+
+  //when network is changed
+  useEffect(() => {
+    const setInitialization = async () => {
+      initializeMetamask();
+      await connectWallet();
+      if (isMetamaskInstalled.current && isWalletConnected.current) {
+        console.log("setting up chain and account event listeners");
+        setupNewMemoListener();
+        getMemos();
+        ethereumObject.current.on("chainChanged", (chainId) => {
+          handleNetworkChage(BigInt(chainId).toString());
+        });
+        ethereumObject.current.on("accountsChanged", (accounts) => {
+          handleAccountChange(accounts);
+        });
+        setIsTransactionReady(true);
+      } else {
+        setIsTransactionReady(false);
+        setErrorMessage("Metamask not installed or connected");
+      }
+    };
+
+    setInitialization();
 
     return () => {
-      if (provider && contract) {
-        provider.removeAllListeners(); // Remove listeners on cleanup
+      if (provider.current) {
+        console.log("removing listeners..");
+        provider.current.removeAllListeners(); // Remove listeners on cleanup
       }
-    }
+      if(contract){
+        contract.removeAllListeners();
+      }
+    };
   }, []);
-
-
-
 
   return (
     <>
@@ -214,22 +254,40 @@ export default function Home() {
         <title>Buy me a coffee!</title>
         <meta name="description" content="Generated by create next app" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href={basePath + "favicon.ico"} />
       </Head>
       <div
         className={`${styles.page} ${geistSans.variable} ${geistMono.variable}`}
       >
+        <div className={classNames(styles.network, styles.rightSide)}>
+          {getNetworkName(networkId)}
+        </div>
+        <div
+          className={classNames(
+            styles.network,
+            styles.leftSide,
+            styles.connectButton,
+            {
+              [styles.redColorFont]: !isTransactionReady,
+              [styles.normalColorFont]: isTransactionReady,
+              [styles.connectButton]: !isTransactionReady,
+            }
+          )}
+          onClick={connectWallet}
+        >
+          {isTransactionReady ? trimAddress(currentAccount) : errorMessage}
+        </div>
         <main className={styles.main}>
-        <h2 className={styles.memeosHeading}>Buy Me a Coffee 🍵 !!</h2>
+          <h2 className={styles.memeosHeading}>Buy Me a Coffee 🍵 !!</h2>
           <div className={styles.imageWrapper}>
-          <Image
-            className={styles.logo}
-            src={basePath+"coffee-removebg-preview.png"}
-            alt="coffee image"
-            width={180}
-            height={180}
-            priority
-          />
+            <Image
+              className={styles.logo}
+              src={basePath + "coffee-removebg-preview.png"}
+              alt="coffee image"
+              width={180}
+              height={180}
+              priority
+            />
           </div>
 
           <div className={styles.ctas}>
@@ -237,7 +295,9 @@ export default function Home() {
               target="_blank"
               rel="noopener noreferrer"
               className={styles.secondary}
-              onClick={() => {buyCoffee("0.001")}}
+              onClick={() => {
+                buyCoffee("0.001");
+              }}
             >
               Buy me a coffee
             </a>
@@ -245,19 +305,35 @@ export default function Home() {
               target="_blank"
               rel="noopener noreferrer"
               className={styles.secondary}
-              onClick={() => {buyCoffee("0.003")}}
+              onClick={() => {
+                buyCoffee("0.003");
+              }}
             >
               Buy me a Large coffee
             </a>
           </div>
           <form>
-          <div className={[styles.secondary,styles.donor].join(' ')}>
-            <input className={styles.donorName} type='text' placeholder='Name' onChange={onNameChange} value={name}/>
-            <textarea className={styles.donorMessage} rows={3} placeholder='Message' onChange={onMessageChange} value={message}/>
-          </div>
+            <div className={[styles.secondary, styles.donor].join(" ")}>
+              <input
+                className={styles.donorName}
+                type="text"
+                placeholder="Name"
+                onChange={onNameChange}
+                value={name}
+              />
+              <textarea
+                className={styles.donorMessage}
+                rows={3}
+                placeholder="Message"
+                onChange={onMessageChange}
+                value={message}
+              />
+            </div>
           </form>
           <div className={styles.memosWrapper}>
-            <h2 className={styles.memeosHeading}>{memos.length > 0 ? "Memos" : "No memos yet..." }</h2>
+            <h2 className={styles.memeosHeading}>
+              {memos.length > 0 ? "Memos" : "No memos yet..."}
+            </h2>
             <ul>
               {memos.map((memo, index) => {
                 return (
