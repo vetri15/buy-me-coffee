@@ -3,7 +3,7 @@ import contractAddresses from "../constants/contractAddress.json";
 
 import classNames from "classnames";
 import { ethers } from "ethers";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState , useRef} from "react";
 
 import Head from "next/head";
 import Image from "next/image";
@@ -28,15 +28,19 @@ export default function Home() {
   const [networkId, setNetworkId] = useState(0);
   const [isTransactionReady, setIsTransactionReady] = useState(false);
   const [errorMessage, setErrorMessage] = useState("Not Connected");
-  const [currentAccount, setCurrentAccount] = useState("0x");
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [memos, setMemos] = useState([]);
-  const [contractAddress, setContractAddress] = useState("0x");
 
-  let isInitialized = false;
-  let isWalletConnected = false;
-  let ethereumObject, provider, network;
+  let [currentAccount, setCurrentAccount] = useState("0x");
+  let [contractAddress, setContractAddress] = useState("0x");
+
+  let isMetamaskInstalled = useRef(false);
+  let isWalletConnected = useRef(false);
+
+  let ethereumObject = useRef();
+  let provider = useRef();
+  let network = useRef();
 
   const onNameChange = (event) => {
     setName(event.target.value);
@@ -50,14 +54,15 @@ export default function Home() {
     return address.slice(0, 6) + "...." + address.slice(-4);
   };
 
-  const isMetaMaskInstalled = () => {
+  const initializeMetamask = () => {
     const { ethereum } = window;
     if (!ethereum) {
-      return false;
+      return;
     }
-    ethereumObject = window.ethereum;
-    provider = new ethers.BrowserProvider(ethereumObject);
-    return true;
+    ethereumObject.current = window.ethereum;
+    provider.current = new ethers.BrowserProvider(ethereumObject.current);
+    isMetamaskInstalled.current = true;
+    return;
   };
 
   const isNetworkSupported = (networkId) => {
@@ -70,20 +75,29 @@ export default function Home() {
 
   const connectWallet = async () => {
     try {
-      if (isMetaMaskInstalled()) {
-        network = await provider.getNetwork();
-        const accounts = await ethereumObject.request({
+      if (isMetamaskInstalled.current) {
+
+        network.current = await provider.current.getNetwork();
+        isWalletConnected.current = (network.current != null ? true : false) && (true);
+
+        const accounts = await ethereumObject.current.request({
           method: "eth_requestAccounts",
         });
-        isWalletConnected = accounts.length > 0 ? true : false;
+        isWalletConnected.current = (accounts.length > 0 ? true : false) && isWalletConnected.current;
 
-        if (isWalletConnected && isNetworkSupported(network.chainId)) {
-          setNetworkId(network.chainId);
-          setContractAddress(
-            contractAddresses[BigInt(network.chainId).toString()]
+        isWalletConnected.current = (isNetworkSupported(network.current.chainId) ? true : false) && isWalletConnected.current;
+
+        if (isWalletConnected.current) {
+          setNetworkId(network.current.chainId);
+          console.log("setting contract address to : "+contractAddresses[BigInt(network.current.chainId).toString()]);
+          contractAddress = contractAddresses[BigInt(network.current.chainId).toString()];
+          await setContractAddress(
+            contractAddresses[BigInt(network.current.chainId).toString()]
           );
           setCurrentAccount(accounts[0]);
         }
+      }else{
+        isWalletConnected.current = false;
       }
     } catch (error) {
       console.log(error);
@@ -93,7 +107,7 @@ export default function Home() {
   const buyCoffee = async (amount) => {
     try {
       if (isTransactionReady) {
-        const signer = await provider.getSigner();
+        const signer = await provider.current.getSigner();
         let buyMeACoffee = new ethers.Contract(
           contractAddress,
           contractABI,
@@ -107,7 +121,7 @@ export default function Home() {
         );
 
         console.log(coffeeTxn);
-        let receipt = await provider.waitForTransaction(coffeeTxn.hash);
+        let receipt = await provider.current.waitForTransaction(coffeeTxn.hash);
 
         console.log("mined ", coffeeTxn);
         console.log(receipt);
@@ -125,9 +139,9 @@ export default function Home() {
 
   const getMemos = async () => {
     try {
-      if (ethereumObject) {
-        const signer = await provider.getSigner();
-        console.log("current network: ", BigInt(network.chainId).toString());
+      if (ethereumObject.current) {
+        const signer = await provider.current.getSigner();
+        console.log("current network: ", BigInt(network.current.chainId).toString());
         const buyMeACoffee = new ethers.Contract(
           contractAddress,
           contractABI,
@@ -157,7 +171,7 @@ export default function Home() {
 
   const setupNewMemoListener = async () => {
     console.log("setting up event listener..");
-    const signer = await provider.getSigner();
+    const signer = await provider.current.getSigner();
     const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
     // Listen for the NewMemo event
@@ -202,39 +216,37 @@ export default function Home() {
   //when network is changed
   useEffect(() => {
     const setInitialization = async () => {
-      if (!isMetaMaskInstalled()) {
-        return;
-      }
+      initializeMetamask();
       await connectWallet();
-      if (ethereumObject && isWalletConnected) {
+      if (isMetamaskInstalled.current && isWalletConnected.current) {
         console.log("setting up chain and account event listeners");
-        handleNetworkChage(network.chainId);
         setupNewMemoListener();
         getMemos();
-        ethereumObject.on("chainChanged", (chainId) => {
+        ethereumObject.current.on("chainChanged", (chainId) => {
           handleNetworkChage(BigInt(chainId).toString());
         });
-        ethereumObject.on("accountsChanged", (accounts) => {
+        ethereumObject.current.on("accountsChanged", (accounts) => {
           handleAccountChange(accounts);
         });
+        setIsTransactionReady(true);
       } else {
         setIsTransactionReady(false);
         setErrorMessage("Metamask not installed or connected");
-        isInitialized = false;
       }
     };
 
-    if (!isInitialized) {
-      setInitialization();
-    }
+    setInitialization();
 
     return () => {
-      if (provider && contractAddress != "0x") {
+      if (provider.current) {
         console.log("removing listeners..");
-        provider.removeAllListeners(); // Remove listeners on cleanup
+        provider.current.removeAllListeners(); // Remove listeners on cleanup
+      }
+      if(contract){
+        contract.removeAllListeners();
       }
     };
-  }, [networkId, currentAccount]);
+  }, []);
 
   return (
     <>
