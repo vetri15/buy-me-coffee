@@ -23,7 +23,7 @@ set the UPDATE_FRONT_END variable to true. inorder for the abi and deployed addr
 npx dotenvx encrypt
 ```
 
-	‼️not running this code will expose your private keys to the Internet. do not proceed further without running the encrypt command.‼️.
+‼️not running this code will expose your private keys to the Internet. do not proceed further without running the encrypt command.‼️.
 
 4 . now the local hardhat node can be run for testing purposes using the below command
 ```shell
@@ -35,6 +35,7 @@ npx hardhat node
 npx hardhat run scripts/buy-coffee-deploy.js --network localhost
 ```
 6 . Now the backend is set and the front-end is also updated.
+
 7 . Run the Next js with the below command
 ```shell
 cd..
