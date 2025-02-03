@@ -1,4 +1,5 @@
 import abi from '../constants/BuyMeACoffee.json';
+import contractAddress from '../constants/contractAddress.json';
 import { ethers } from "ethers";
 import React, { useEffect, useState } from "react";
 
