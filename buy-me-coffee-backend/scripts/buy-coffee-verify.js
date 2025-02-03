@@ -1,18 +1,15 @@
 const { run } = require("hardhat");
 const hre = require("hardhat");
+const { frontEndContractsFile } = require("../frontend-update.config");
+const fs = require("fs");
 
-//this will deploy to the localhost
-//npx hardhat run scripts/buy-coffee-deploy.js --network localhost
-
-//deployed counter to 0xA91a24D350E19f912078FD91e30a0D36b1BeCbBb;
-
-const CONTRACT_ADDRESS = "0xA91a24D350E19f912078FD91e30a0D36b1BeCbBb";
 const CONSTRUCTOR_ARGUMENTS = [];
 
 async function main() {
     if(hre.network.name === "sepolia"){
     console.log("Verifying contract...");
-    let contractAddress = CONTRACT_ADDRESS;
+    const contractAddresses = JSON.parse(fs.readFileSync(frontEndContractsFile, "utf8"));
+    const contractAddress = contractAddresses[hre.network.name];
     let args = CONSTRUCTOR_ARGUMENTS;
     try {
         await run("verify:verify", {
