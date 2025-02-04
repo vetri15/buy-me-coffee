@@ -48,12 +48,16 @@ jobs:
             echo "Unable to determine package manager"
             exit 1
           fi
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: ${{ steps.detect-package-manager.outputs.manager }}
-          path: ./buy-me-coffee-frontend
+      # - name: Setup Node
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: "20"
+      #     cache: ${{ steps.detect-package-manager.outputs.manager }}
+      - name: Configure NPM
+        working-directory: ./buy-me-coffee-frontend
+        run: | 
+          echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> .npmrc
+          echo "always-auth: true" >> .npmrc
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
