@@ -87,8 +87,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
-          working-directory: ./buy-me-coffee-frontend
+          path: ./buy-me-coffee-frontend/out
 
   # Deployment job
   deploy:
