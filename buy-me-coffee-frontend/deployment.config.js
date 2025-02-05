@@ -1,9 +1,12 @@
-const deployment = "github"
+require('dotenv').config()
+
+const deploymentTarget = process.env.DEPLOYMENT_TARGET;
 //replace "github" with "local" when deploying to local files
 
 const githubBasePath = "";
-const localBasePath = "";
+const localBasePath = "/buy-me-coffee/";
 
-const basePath = (deployment === "github") ? githubBasePath : localBasePath;
+const basePath = (deploymentTarget === "github") ? githubBasePath : localBasePath;
+
 export default basePath;
   
