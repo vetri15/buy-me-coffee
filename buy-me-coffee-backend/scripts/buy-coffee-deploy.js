@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 const fs = require("fs");
 require("@dotenvx/dotenvx").config();
-const { frontEndContractsFile, frontEndAbiFile } = require("../frontend-update.config");
+const { frontEndContractsFile, frontEndAbiFileDestination } = require("../frontend-update.config");
 
 //this will deploy to the localhost
 //npx hardhat run scripts/buy-coffee-deploy.js --network localhost
@@ -45,7 +45,7 @@ async function main() {
 }
 
 async function updateAbi() {
-  const frontEndAbiFileDestination = frontEndAbiFile;
+  const frontEndAbiFileDestination = frontEndAbiFileDestination;
   const artifactLocation = "../buy-me-coffee-backend/artifacts/contracts/BuyMeACoffee.sol/BuyMeACoffee.json";
   const ContractAbiArtifact = JSON.parse(fs.readFileSync(artifactLocation, "utf8"))
   fs.writeFileSync(frontEndAbiFileDestination, JSON.stringify(ContractAbiArtifact, null, 2));
