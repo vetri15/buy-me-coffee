@@ -1,5 +1,5 @@
 import abi from '../constants/BuyMeACoffee.json';
-import contractAddress from '../constants/contractAddress.json';
+import contractAddresses from '../constants/contractAddress.json';
 import { ethers } from "ethers";
 import React, { useEffect, useState } from "react";
 
@@ -20,8 +20,8 @@ const geistMono = Geist_Mono({
 });
 
 export default function Home() {
-
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  
+  let contractAddress = "0x";
   const contractABI = abi.abi;
   let test = 2;
   const [currentAccount, setCurrentAccount] = useState("");
@@ -122,6 +122,9 @@ export default function Home() {
       if (ethereum) {
         const provider = new ethers.BrowserProvider(ethereum);
         const signer = await provider.getSigner();
+        const network = await provider.getNetwork();
+        console.log("current network: ", BigInt(network.chainId).toString());
+        contractAddress = contractAddresses[BigInt(network.chainId).toString()];
         const buyMeACoffee = new ethers.Contract(
           contractAddress,
           contractABI,

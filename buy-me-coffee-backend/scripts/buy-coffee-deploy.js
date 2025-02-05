@@ -54,12 +54,12 @@ async function updateAbi() {
 async function updateContractAddresses(contractAddress) {
   const _frontEndContractAddressesFile = frontEndContractAddressesFile;
   const contractAddresses = JSON.parse(fs.readFileSync(_frontEndContractAddressesFile, "utf8"))
-  if (hre.network.name in contractAddresses) {
-      if (!contractAddresses[hre.network.name].includes(contractAddress)) {
-          contractAddresses[hre.network.name]=contractAddress;
+  if (hre.network.config.chainId.toString() in contractAddresses) {
+      if (!contractAddresses[hre.network.config.chainId.toString()].includes(contractAddress)) {
+          contractAddresses[hre.network.config.chainId.toString()]=contractAddress;
       }
   } else {
-      contractAddresses[hre.network.name] = [contractAddress];
+      contractAddresses[hre.network.config.chainId.toString()] = contractAddress;
   }
   fs.writeFileSync(_frontEndContractAddressesFile, JSON.stringify(contractAddresses))
 }
