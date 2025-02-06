@@ -158,6 +158,40 @@ a.secondary {
   width: 25em;
 }
 
+.network {
+  position: fixed;
+  top: 10px;
+  background-color: var(--gray-alpha-100);
+  color: var(--gray-rgb);
+  border: 1px solid var(--gray-alpha-100);
+  padding: 5px 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
+  z-index: 1000;
+}
+
+.rightSide {
+  right: 10px;
+}
+
+.leftSide{
+  left: 10px;
+}
+
+.redColorFont{
+  color: red;
+}
+
+.normalColorFont{
+  color: var(--gray-rgb);
+}
+
+.connectButton:hover{
+  background-color: var(--gray-alpha-200);
+  cursor: pointer;
+}
+
 
 
 /* ////////////////////////// */
