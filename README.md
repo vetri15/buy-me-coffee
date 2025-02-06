@@ -40,6 +40,7 @@ npx hardhat run scripts/buy-coffee-deploy.js --network localhost
 ```shell
 cd..
 cd buy-me-coffee-frontend
+npm install
 npm run dev
 ```
 8 . Done! The application is up and running at http://localhost:3000/buy-me-coffee
